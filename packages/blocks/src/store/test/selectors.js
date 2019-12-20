@@ -13,9 +13,42 @@ import {
 	getDefaultBlockVariation,
 	getGroupingBlockName,
 	isMatchingSearchTerm,
+	getCategories,
+	getCategory,
 } from '../selectors';
 
 describe( 'selectors', () => {
+	describe( 'getCategories', () => {
+		it( 'returns categories state', () => {
+			const categories = [ { slug: 'text', text: 'Text' } ];
+			const state = deepFreeze( { categories } );
+
+			expect( getCategories( state ) ).toEqual( categories );
+		} );
+	} );
+
+	describe( 'getCategory', () => {
+		it( 'returns a single category by slug', () => {
+			const category = { slug: 'text', text: 'Text' };
+			const state = deepFreeze( { categories: [ category ] } );
+
+			expect( getCategory( state, 'text' ) ).toEqual( category );
+		} );
+
+		it( 'returns undefined for a category which does not exist', () => {
+			const state = deepFreeze( { categories: [] } );
+
+			expect( getCategory( state, 'nonsense' ) ).toBe( undefined );
+		} );
+
+		it( 'returns a canonicalized category', () => {
+			const category = { slug: 'text', text: 'Text' };
+			const state = deepFreeze( { categories: [ category ] } );
+
+			expect( getCategory( state, 'common' ) ).toEqual( category );
+		} );
+	} );
+
 	describe( 'getChildBlockNames', () => {
 		it( 'should return an empty array if state is empty', () => {
 			const state = {};
@@ -232,8 +265,8 @@ describe( 'selectors', () => {
 		const name = 'core/paragraph';
 		const blockType = {
 			title: 'Paragraph',
-			category: 'common',
-			keywords: [ 'text' ],
+			category: 'text',
+			keywords: [ 'body' ],
 		};
 
 		const state = {
@@ -301,7 +334,7 @@ describe( 'selectors', () => {
 				const result = isMatchingSearchTerm(
 					state,
 					nameOrType,
-					'TEXT'
+					'BODY'
 				);
 
 				expect( result ).toBe( true );
@@ -312,7 +345,7 @@ describe( 'selectors', () => {
 					const result = isMatchingSearchTerm(
 						state,
 						nameOrType,
-						'COMMON'
+						'TEXT'
 					);
 
 					expect( result ).toBe( true );

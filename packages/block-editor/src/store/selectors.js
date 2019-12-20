@@ -1283,7 +1283,7 @@ export const getInserterItems = createSelector(
 				return INSERTER_UTILITY_HIGH;
 			} else if ( count > 0 ) {
 				return INSERTER_UTILITY_MEDIUM;
-			} else if ( category === 'common' ) {
+			} else if ( category === 'text' ) {
 				return INSERTER_UTILITY_LOW;
 			}
 			return INSERTER_UTILITY_NONE;

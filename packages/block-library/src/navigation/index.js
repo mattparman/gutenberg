@@ -22,7 +22,7 @@ export const settings = {
 
 	keywords: [ __( 'menu' ), __( 'navigation' ), __( 'links' ) ],
 
-	category: 'layout',
+	category: 'design',
 
 	supports: {
 		align: [ 'wide', 'full' ],

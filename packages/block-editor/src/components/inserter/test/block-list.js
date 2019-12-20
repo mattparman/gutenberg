@@ -98,8 +98,10 @@ describe( 'InserterMenu', () => {
 			'.block-editor-block-types-list__item-title'
 		);
 		expect( visibleBlocks ).toHaveLength( 3 );
-		expect( visibleBlocks[ 0 ].textContent ).toEqual( 'Text' );
-		expect( visibleBlocks[ 1 ].textContent ).toEqual( 'Advanced Text' );
+		expect( visibleBlocks[ 0 ].textContent ).toEqual( 'Paragraph' );
+		expect( visibleBlocks[ 1 ].textContent ).toEqual(
+			'Advanced Paragraph'
+		);
 		expect( visibleBlocks[ 2 ].textContent ).toEqual( 'Some Other Block' );
 	} );
 
@@ -118,7 +120,7 @@ describe( 'InserterMenu', () => {
 		expect( embedTabTitle.textContent ).toBe( 'Embeds' );
 		expect( blocks ).toHaveLength( 2 );
 		expect( blocks[ 0 ].textContent ).toBe( 'YouTube' );
-		expect( blocks[ 1 ].textContent ).toBe( 'A Text Embed' );
+		expect( blocks[ 1 ].textContent ).toBe( 'A Paragraph Embed' );
 
 		assertNoResultsMessageNotToBePresent( container );
 	} );
@@ -154,10 +156,10 @@ describe( 'InserterMenu', () => {
 			'.block-editor-block-types-list__item-title'
 		);
 
-		expect( commonTabTitle.textContent ).toBe( 'Common blocks' );
+		expect( commonTabTitle.textContent ).toBe( 'Text' );
 		expect( blocks ).toHaveLength( 3 );
-		expect( blocks[ 0 ].textContent ).toBe( 'Text' );
-		expect( blocks[ 1 ].textContent ).toBe( 'Advanced Text' );
+		expect( blocks[ 0 ].textContent ).toBe( 'Paragraph' );
+		expect( blocks[ 1 ].textContent ).toBe( 'Advanced Paragraph' );
 		expect( blocks[ 2 ].textContent ).toBe( 'Some Other Block' );
 
 		assertNoResultsMessageNotToBePresent( container );
@@ -178,7 +180,7 @@ describe( 'InserterMenu', () => {
 
 	it( 'should allow searching for items', () => {
 		const { container } = render(
-			<InserterBlockList filterValue="text" />
+			<InserterBlockList filterValue="paragraph" />
 		);
 
 		const matchingCategories = container.querySelectorAll(
@@ -186,7 +188,7 @@ describe( 'InserterMenu', () => {
 		);
 
 		expect( matchingCategories ).toHaveLength( 3 );
-		expect( matchingCategories[ 0 ].textContent ).toBe( 'Common blocks' );
+		expect( matchingCategories[ 0 ].textContent ).toBe( 'Text' );
 		expect( matchingCategories[ 1 ].textContent ).toBe( 'Embeds' );
 		expect( matchingCategories[ 2 ].textContent ).toBe( 'Core' ); // "Core" namespace collection
 
@@ -200,13 +202,13 @@ describe( 'InserterMenu', () => {
 		expect( debouncedSpeak ).toHaveBeenCalledWith( '3 results found.' );
 
 		// Default block results.
-		expect( blocks[ 0 ].textContent ).toBe( 'Text' );
-		expect( blocks[ 1 ].textContent ).toBe( 'Advanced Text' );
-		expect( blocks[ 2 ].textContent ).toBe( 'A Text Embed' );
+		expect( blocks[ 0 ].textContent ).toBe( 'Paragraph' );
+		expect( blocks[ 1 ].textContent ).toBe( 'Advanced Paragraph' );
+		expect( blocks[ 2 ].textContent ).toBe( 'A Paragraph Embed' );
 
 		// Collection results.
-		expect( blocks[ 3 ].textContent ).toBe( 'Text' );
-		expect( blocks[ 4 ].textContent ).toBe( 'Advanced Text' );
+		expect( blocks[ 3 ].textContent ).toBe( 'Paragraph' );
+		expect( blocks[ 4 ].textContent ).toBe( 'Advanced Paragraph' );
 
 		assertNoResultsMessageNotToBePresent( container );
 	} );
@@ -257,7 +259,7 @@ describe( 'InserterMenu', () => {
 
 	it( 'should trim whitespace of search terms', () => {
 		const { container } = render(
-			<InserterBlockList filterValue=" text" />
+			<InserterBlockList filterValue=" paragraph" />
 		);
 
 		const matchingCategories = container.querySelectorAll(
@@ -265,7 +267,7 @@ describe( 'InserterMenu', () => {
 		);
 
 		expect( matchingCategories ).toHaveLength( 3 );
-		expect( matchingCategories[ 0 ].textContent ).toBe( 'Common blocks' );
+		expect( matchingCategories[ 0 ].textContent ).toBe( 'Text' );
 		expect( matchingCategories[ 1 ].textContent ).toBe( 'Embeds' );
 
 		const blocks = container.querySelectorAll(
@@ -273,9 +275,9 @@ describe( 'InserterMenu', () => {
 		);
 
 		expect( blocks ).toHaveLength( 5 );
-		expect( blocks[ 0 ].textContent ).toBe( 'Text' );
-		expect( blocks[ 1 ].textContent ).toBe( 'Advanced Text' );
-		expect( blocks[ 2 ].textContent ).toBe( 'A Text Embed' );
+		expect( blocks[ 0 ].textContent ).toBe( 'Paragraph' );
+		expect( blocks[ 1 ].textContent ).toBe( 'Advanced Paragraph' );
+		expect( blocks[ 2 ].textContent ).toBe( 'A Paragraph Embed' );
 
 		assertNoResultsMessageNotToBePresent( container );
 	} );
