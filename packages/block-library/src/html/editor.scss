@@ -1,7 +1,7 @@
 .wp-block-html {
 	&.wp-block-html__is-html {
 		border-radius: $radius-block-ui;
-		box-shadow: inset 0 0 0 $border-width $dark-gray-primary;
+		box-shadow: inset 0 0 0 $border-width $medium-gray-text;
 		/* Padding to prevent the rich text editor scroll bar from overlapping the
 		border. This also makes it easier to overlap the block wrapper's
 		box-shadow with the rich text editor's focus box-shadow. */
