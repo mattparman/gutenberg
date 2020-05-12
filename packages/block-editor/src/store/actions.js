@@ -1010,3 +1010,18 @@ export function toggleBlockHighlight( clientId, isHighlighted ) {
 		isHighlighted,
 	};
 }
+
+/**
+ * Yields action objects used in signalling that the block corresponding to the
+ * given clientId should appear to "flash" by rhythmically highlighting it.
+ *
+ * @param {string} clientId Target block client ID.
+ */
+export function* flashBlock( clientId ) {
+	yield toggleBlockHighlight( clientId, true );
+	yield {
+		type: 'SLEEP',
+		duration: 150,
+	};
+	yield toggleBlockHighlight( clientId, false );
+}
