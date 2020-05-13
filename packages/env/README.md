@@ -401,10 +401,11 @@ You can tell `wp-env` to use a custom port number so that your instance does not
 
 ## Phpunit
 
-You can run phpunit in the Docker environment with the WordPress phpunit test functions with these instructions. Note that all of the files we mention here should be included in one of the sources which is mapped into the WordPress instance.
+You can run phpunit in the Docker environment with the WordPress phpunit test functions with these instructions. Note that all of the files we mention here should be included in one of the sources which is mapped into the WordPress instance. This setup depends on WP PHPUnit. [Find more information about that here](https://github.com/wp-phpunit/docs).
 
-1. Specify a `phpunit.dist.xml` within one of your mapped sources. For example, if your main source is a plugin in cwd (`"plugins": [ "." ]`), you could put `phpunit.dist.xml` in the top-level directory. [Here is an example of a `phpunit.dist.xml` file.](https://github.com/WordPress/gutenberg/blob/master/phpunit.xml.dist)
-2. Make sure `phpunit.dist.xml` points to a local `bootstrap.php` file. This should require composer dependencies and also attempt to load the WordPress test functions. Below is the minimal PHP to make it work:
+1. Use composer to install WP PHPUnit: `wp-env run composer "composer require wp-phpunit/wp-phpunit --dev"`.
+2. Specify a `phpunit.dist.xml` within one of your mapped sources. For example, if your main source is a plugin in cwd (`"plugins": [ "." ]`), you could put `phpunit.dist.xml` in the top-level directory. [Here is an example of a `phpunit.dist.xml` file.](https://github.com/WordPress/gutenberg/blob/master/phpunit.xml.dist)
+3. Make sure `phpunit.dist.xml` points to a local `bootstrap.php` file. This should require composer dependencies and also attempt to load the WordPress test functions. Below is the minimal PHP to make it work:
 
 ```php
 <?php
@@ -423,6 +424,6 @@ require_once $_tests_dir . '/includes/functions.php';
 require $_tests_dir . '/includes/bootstrap.php';
 ```
 
-3. Call `wp-env run phpunit phpunit $path_to_config_dir`. For example, `$path_to_config_dir` can be `./` if you placed the phpunit config file in the current working directory. Looking at the peices, this command simply runs the `phpunit` command on the `phpunit` service in the specified directory. The directory should be specified relative to cwd of the wp-env command. Under the hood, wp-env locates the mapped version of that path inside the Docker container.
+4. Call `wp-env run phpunit phpunit $path_to_config_dir`. For example, `$path_to_config_dir` can be `./` if you placed the phpunit config file in the current working directory. Looking at the peices, this command simply runs the `phpunit` command on the `phpunit` service in the specified directory. The directory should be specified relative to cwd of the wp-env command. Under the hood, wp-env locates the mapped version of that path inside the Docker container.
 
 <br/><br/><p align="center"><img src="https://s.w.org/style/images/codeispoetry.png?1" alt="Code is Poetry." /></p>
