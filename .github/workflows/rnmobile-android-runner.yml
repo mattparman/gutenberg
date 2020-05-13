@@ -30,7 +30,9 @@ jobs:
       with:
         api-level: 28
         profile: pixel_xl
-        script: npm run native test:e2e:android:local
+        script: |
+          echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
+          npm run native test:e2e:android:local
 
     - uses: actions/upload-artifact@v2
       if: always()
