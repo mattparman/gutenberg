@@ -30,7 +30,7 @@ class WP_REST_Menu_Items_Batch_Processor {
 		$this->wpdb->query( 'START TRANSACTION' );
 		$this->wpdb->query( 'SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ' );
 
-		$result = $this->bulk_persist( $validated_operations );
+		$result = $this->bulk_persist( $navigation_id, $validated_operations );
 
 		if ( is_wp_error( $result ) ) {
 			$this->wpdb->query( 'ROLLBACK' );
@@ -62,7 +62,7 @@ class WP_REST_Menu_Items_Batch_Processor {
 	}
 
 	protected function diff( $navigation_id, $tree ) {
-		$current_menu_items = wp_get_nav_menu_items( $navigation_id, array( 'post_status' => 'publish,draft' ) );
+		$current_menu_items = $this->controller->get_menu_items( $navigation_id );
 		$operations = [];
 
 		$stack = [
@@ -71,16 +71,18 @@ class WP_REST_Menu_Items_Batch_Processor {
 		$updated_ids = [];
 		while ( ! empty( $stack ) ) {
 			list( $parent_operation, $raw_menu_items ) = array_pop( $stack );
-			foreach ( $raw_menu_items as $raw_menu_item ) {
+			foreach ( $raw_menu_items as $n => $raw_menu_item ) {
 				$children = ! empty( $raw_menu_item['children'] ) ? $raw_menu_item['children'] : [];
 				unset( $raw_menu_item['children'] );
+				$raw_menu_item['menu_order'] = $n + 1;
 
 				if ( ! empty( $raw_menu_item['id'] ) ) {
 					$updated_ids[] = $raw_menu_item['id'];
 					$operation = new UpdateOperation( $this->controller, $raw_menu_item, $parent_operation );
 					$operations[] = $operation;
 				} else {
-					$operation = new InsertOperation( $this->controller, $raw_menu_item, $parent_operation );
+					// Inserts are handled "as we go" by use-navigation-blocks.js
+					$operation = new UnsupportedOperation( $this->controller, $raw_menu_item, $parent_operation );
 					$operations[] = $operation;
 				}
 
@@ -100,7 +102,7 @@ class WP_REST_Menu_Items_Batch_Processor {
 		return $operations;
 	}
 
-	protected function bulk_persist( $validated_operations ) {
+	protected function bulk_persist( $navigation_id, $validated_operations ) {
 		foreach ( $validated_operations as $operation ) {
 			$result = $operation->persist( $this->request );
 			if ( is_wp_error( $result ) ) {
@@ -181,6 +183,18 @@ class InsertOperation extends Operation {
 
 }
 
+class UnsupportedOperation extends Operation {
+
+	public function doValidate() {
+		return new WP_Error( "This operation is unsupported" );
+	}
+
+	public function doPersist( $request ) {
+		return new WP_Error( "Not implemented" );
+	}
+
+}
+
 class UpdateOperation extends Operation {
 
 	public function doValidate() {
@@ -188,9 +202,6 @@ class UpdateOperation extends Operation {
 	}
 
 	public function doPersist( $request ) {
-		// @TODO Only persist updated items, not all of them
-		// if ( $raw_menu_item['dirty'] ) {
-		// }
 		return $this->controller->update_item_persist( $this->prepared_item, $this->input, $request );
 	}
 

@@ -1,13 +1,13 @@
 /**
  * External dependencies
  */
-import { groupBy } from 'lodash';
+import { groupBy, isEqual, difference, omit } from 'lodash';
 
 /**
  * WordPress dependencies
  */
 import { createBlock } from '@wordpress/blocks';
-import { useDispatch, useSelect } from '@wordpress/data';
+import { useSelect, useDispatch } from '@wordpress/data';
 import { useState, useRef, useEffect } from '@wordpress/element';
 import apiFetch from '@wordpress/api-fetch';
 
@@ -29,14 +29,64 @@ function createMenuItemAttributesFromBlock( block ) {
 	};
 }
 
+const flatten = ( recursiveArray, childrenKey ) =>
+	recursiveArray.flatMap( ( item ) =>
+		[ item ].concat( flatten( item[ childrenKey ] || [], childrenKey ) )
+	);
+
 export default function useNavigationBlocks( menuId ) {
+	// menuItems is an array of menu item objects.
 	const menuItems = useSelect(
-		( select ) => select( 'core' ).getMenuItems( { menus: menuId } ),
+		( select ) =>
+			select( 'core' ).getMenuItems( { menus: menuId, per_page: -1 } ),
 		[ menuId ]
 	);
-	const { receiveEntityRecords } = useDispatch( 'core' );
 
+	const { receiveEntityRecords, saveMenuItem } = useDispatch( 'core' );
+
+	// Here be dragons - this is a pretty messy POC, it needs a ton of cleanup and improvements
+	// before it will even be close to being mergeable
 	const [ blocks, setBlocks ] = useState( [] );
+	const [ flatBlocks, setFlatBlocks ] = useState( [] );
+
+	const updateBlocks = ( newBlocks ) => {
+		const flatNewBlocks = flatten(
+			newBlocks[ 0 ]?.innerBlocks,
+			'innerBlocks'
+		);
+		const added = flatNewBlocks.filter(
+			( a ) => ! flatBlocks.find( ( b ) => b.clientId === a.clientId )
+		);
+		const fullData = flatten(
+			prepareRequestData( newBlocks[ 0 ].innerBlocks, 0 ),
+			'children'
+		);
+		added.forEach( ( block ) => {
+			const data = fullData.filter(
+				( entry ) => entry.clientId === block.clientId
+			)[ 0 ];
+			if ( ! data || data.id ) {
+				return;
+			}
+			delete data.menus;
+			if ( ! data.title ) {
+				data.title = 'Placeholder';
+			}
+			if ( ! data.url ) {
+				data.url = 'Placeholder';
+			}
+			apiFetch( {
+				path: `/__experimental/menu-items`,
+				method: 'POST',
+				data,
+			} ).then( ( createdItem ) => {
+				menuItemsRef.current[ block.clientId ] = createdItem;
+			} );
+		} );
+
+		setBlocks( newBlocks );
+		setFlatBlocks( flatNewBlocks );
+	};
 
 	const menuItemsRef = useRef( {} );
 
@@ -69,32 +119,38 @@ export default function useNavigationBlocks( menuId ) {
 		};
 
 		// createMenuItemBlocks takes an array of top-level menu items and recursively creates all their innerBlocks
-		const innerBlocks = createMenuItemBlocks( itemsByParentID[ 0 ] );
-		setBlocks( [ createBlock( 'core/navigation', {}, innerBlocks ) ] );
+		const innerBlocks = createMenuItemBlocks( itemsByParentID[ 0 ] || [] );
+		updateBlocks( [ createBlock( 'core/navigation', {}, innerBlocks ) ] );
 	}, [ menuItems ] );
+
+	const prepareRequestItem = ( block, parentId ) => {
+		const menuItem = omit(
+			menuItemsRef.current[ block.clientId ] || {},
+			'_links'
+		);
+
+		return {
+			...menuItem,
+			...createMenuItemAttributesFromBlock( block ),
+			clientId: block.clientId,
+			menus: menuId,
+			parent: parentId,
+			menu_order: 0,
+		};
+	};
+
+	const prepareRequestData = ( nestedBlocks, parentId = 0 ) =>
+		nestedBlocks.map( ( block ) => {
+			const data = prepareRequestItem( block, parentId );
+			return {
+				...data,
+				children: prepareRequestData( block.innerBlocks, data.id ),
+			};
+		} );
 
 	const saveBlocks = async () => {
 		const { clientId, innerBlocks } = blocks[ 0 ];
 		const parentItemId = menuItemsRef.current[ clientId ]?.parent;
-
-		const prepareRequestData = ( nestedBlocks, parentId = 0 ) =>
-			nestedBlocks.map( ( block, n ) => {
-				const menuItem = menuItemsRef.current[ block.clientId ];
-				const currentItemId = menuItem?.id || 0;
-
-				return {
-					...( menuItem || {} ),
-					...createMenuItemAttributesFromBlock( block ),
-					menu_order: n + 1,
-					menus: menuId,
-					parent: parentId,
-					children: prepareRequestData(
-						block.innerBlocks,
-						currentItemId
-					),
-				};
-			} );
-
 		const requestData = prepareRequestData( innerBlocks, parentItemId );
 
 		const saved = await apiFetch( {
@@ -105,18 +161,18 @@ export default function useNavigationBlocks( menuId ) {
 
 		const kind = 'root';
 		const name = 'menuItem';
-		receiveEntityRecords(
-			kind,
-			name,
-			saved,
-			// {
-			// 	...item.data,
-			// 	title: { rendered: 'experimental' },
-			// },
-			undefined,
-			true
-		);
+		// receiveEntityRecords(
+		// 	kind,
+		// 	name,
+		// 	saved,
+		// 	// {
+		// 	// 	...item.data,
+		// 	// 	title: { rendered: 'experimental' },
+		// 	// },
+		// 	undefined,
+		// 	true
+		// );
 	};
 
-	return [ blocks, setBlocks, saveBlocks ];
+	return [ blocks, updateBlocks, saveBlocks ];
 }

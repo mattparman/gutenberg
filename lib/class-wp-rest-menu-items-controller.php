@@ -172,7 +172,7 @@ class WP_REST_Menu_Items_Controller extends WP_REST_Posts_Controller {
 			return $nav_menu_item_id;
 		}
 
-		$nav_menu_item = $this->get_nav_menu_item_cached( $nav_menu_item_id, $prepared_nav_item['menu-id'] );
+		$nav_menu_item = $this->get_nav_menu_item( $nav_menu_item_id, $prepared_nav_item['menu-id'] );
 		if ( is_wp_error( $nav_menu_item ) ) {
 			$nav_menu_item->add_data( array( 'status' => 404 ) );
 
@@ -513,7 +513,7 @@ class WP_REST_Menu_Items_Controller extends WP_REST_Posts_Controller {
 		}
 
 		// If menu id is set, valid the value of menu item position and parent id.
-		if ( ! empty( $prepared_nav_item['menu-id'] ) ) {
+		if ( ! $this->ignore_position_collision && ! empty( $prepared_nav_item['menu-id'] ) ) {
 			// Check if nav menu is valid.
 			if ( ! is_nav_menu( $prepared_nav_item['menu-id'] ) ) {
 				return new WP_Error( 'invalid_menu_id', __( 'Invalid menu ID.', 'gutenberg' ), array( 'status' => 400 ) );
@@ -538,7 +538,7 @@ class WP_REST_Menu_Items_Controller extends WP_REST_Posts_Controller {
 			$menu_item_ids = array();
 			foreach ( $menu_items as $menu_item ) {
 				$menu_item_ids[] = $menu_item->ID;
-				if ( ! $this->ignore_position_collision && $menu_item->ID !== (int) $menu_item_db_id ) {
+				if ( $menu_item->ID !== (int) $menu_item_db_id ) {
 					if ( (int) $prepared_nav_item['menu-item-position'] === (int) $menu_item->menu_order ) {
 						return new WP_Error( 'invalid_menu_order', __( 'Invalid menu position.', 'gutenberg' ),
 							array( 'status' => 400 ) );
@@ -1164,8 +1164,8 @@ class WP_REST_Menu_Items_Controller extends WP_REST_Posts_Controller {
 	 *
 	 * @return mixed
 	 */
-	protected function get_menu_items( $menu_id, $refresh = false ) {
-		if ( ! $this->cached_menu_items[ $menu_id ] || $refresh ) {
+	public function get_menu_items( $menu_id, $refresh = false ) {
+		if ( empty( $this->cached_menu_items[ $menu_id ] ) || $refresh ) {
 			$items = wp_get_nav_menu_items( $menu_id, array( 'post_status' => 'publish,draft' ) );
 			$items_by_id = [];
 			foreach ( $items as $item ) {
