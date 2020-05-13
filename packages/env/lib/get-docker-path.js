@@ -1,6 +1,7 @@
-const run = require( './run' );
-
-const initConfig = require( '../init-config' );
+/**
+ * External dependencies
+ */
+const { resolve } = require( 'path' );
 
 /**
  * @typedef {import('../config').Config} Config
@@ -11,37 +12,6 @@ const initConfig = require( '../init-config' );
  * @callback pathFinder
  * @return {?string} If found, an absolute path which works in the docker image.
  */
-
-/**
- * Runs phpunit in the docker image. Assumes that wp-env is already running.
- *
- * @param {Object}  options configPath
- * @param {Object}  options.args    Arguments to pass to phpunit.
- * @param {Object}  options.spinner A CLI spinner which indicates progress.
- * @param {boolean} options.debug   True if debug mode is enabled.
- */
-module.exports = async function phpunit( { spinner, debug, args } ) {
-	const config = await initConfig( { spinner, debug } );
-	const phpunitConfig = config.phpunitConfigPath;
-
-	if ( phpunitConfig ) {
-		// Get the Docker filesystem path of the phpunit config file.
-		const dockerPath = getDockerPath( config, phpunitConfig );
-		if ( ! dockerPath ) {
-			throw new Error(
-				'Could not locate the phpunit config file in the Docker environment. Make sure it is in one of your mapped sources.'
-			);
-		}
-		await run( {
-			container: 'phpunit',
-			command: [ 'phpunit', '-c', dockerPath, args ],
-			spinner,
-			debug,
-		} );
-	} else {
-		throw new Error( 'No phpunit config file found.' );
-	}
-};
 
 /**
  * Given a local path contained by one of the sources, returns the internal path.
@@ -59,7 +29,8 @@ module.exports = async function phpunit( { spinner, debug, args } ) {
  * @param {string} path   The local path which should be converted.
  * @return {?string} If found, the path to the
  */
-function getDockerPath( config, path ) {
+module.exports = function getDockerPath( config, path ) {
+	path = resolve( path );
 	const pathFinders = [
 		getPathFinder( path, config.pluginSources, true, 'wp-content/plugins' ),
 		getPathFinder( path, config.themeSources, true, 'wp-content/themes' ),
@@ -74,7 +45,7 @@ function getDockerPath( config, path ) {
 		}
 	}
 	return null;
-}
+};
 
 /**
  * Returns a function which computes the internal path of searchPath.
